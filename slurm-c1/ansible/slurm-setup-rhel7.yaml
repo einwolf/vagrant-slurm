@@ -1,0 +1,40 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: Provision slurm
+      debug:
+        msg: "SLURM ALL"
+    - name: Install packages
+      yum:
+        state: latest
+        name:
+          - chrony
+          - mariadb
+          - mariadb-server
+          - slurm
+          - slurm-doc
+          - slurm-slurmctld
+          - slurm-slurmd
+          - slurm-slurmdbd
+          - slurm-slurmrestd
+          - slurm-nss_slurm
+          - slurm-pam_slurm
+          - munge
+    - name: mkdir ~/.ssh
+      command: mkdir -v ~/.ssh
+      register: result
+      failed_when: not (result.rc == 0 or result.rc == 1)
+    - name: Get ssh host keys
+      shell: ssh-keyscan {{ item }} >> ~/.ssh/known_hosts
+      with_items:
+        - slurm-c1-head1
+        - slurm-c1-node1
+        - slurm-c1-node2
+        - slurm-c1-node3
+    - name: Sort known_hosts
+      shell: sort ~/.ssh/known_hosts | uniq > ~/.ssh/known_hosts.unique
+    - name: Replace known_hosts
+      shell: mv -vf ~/.ssh/known_hosts.unique ~/.ssh/known_hosts
+      

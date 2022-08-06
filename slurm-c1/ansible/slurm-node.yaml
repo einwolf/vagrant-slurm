@@ -1,0 +1,20 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: Provision slurm node
+      debug:
+        msg: "SLURM NODE"
+    - name: Check for munge key
+      stat:
+        path: /etc/munge/munge.key
+      register: munge_key_stat
+    - name: Copy munge key
+      copy:
+        src: setup/slurm-c1-head1/etc/munge/munge.key
+        dest: /etc/munge/munge.key
+        owner: munge
+        group: munge
+        mode: u=r,go=
+      when: not munge_key_stat.stat.exists

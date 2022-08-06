@@ -1,0 +1,100 @@
+# Goals
+# Install EPEL
+# Make sure python 3 is installed
+---
+- hosts: all
+  gather_facts: yes
+  become: true
+  # vars:
+  #   placeholder: yes
+  # vars_prompt:
+  #   - name: prompt_hostname
+  #     prompt: "What is the host name of the computer?"
+  #     private: no
+  tasks:
+    - name: ansible_system
+      debug: verbosity=1 msg="{{ ansible_system }}" 
+    - name: ansible_distribution
+      debug: verbosity=1 msg="{{ ansible_distribution }}" 
+    - name: ansible_distribution_version
+      debug: verbosity=1 msg="{{ ansible_distribution_version }}"
+    - name: ansible_distribution_major_version
+      debug: verbosity=1 msg="{{ ansible_distribution_major_version }}"
+    - name: ansible_distribution_release
+      debug: verbosity=1 msg="{{ ansible_distribution_release }}"
+    - name: ansible_distribution_file_path
+      debug: verbosity=1 msg="{{ ansible_distribution_file_path }}"
+    - name: ansible_distribution_file_variety
+      debug: verbosity=1 msg="{{ ansible_distribution_file_variety }}"
+    - name: Check if inital_setup ran
+      stat:
+        path: /etc/initial_setup_ran_at
+      register: initial_setup_ran_at_stat
+    - block:
+        - name: Don't run initial_setup if already run
+          debug:
+            msg: initial_setup already ran
+        - meta: end_host
+      when: initial_setup_ran_at_stat.stat.exists
+#
+    # This is always including the first OS type like it's cached and reused for all systems
+    # - name: Include epel-setup
+    #   include_role:
+    #     name: einwolf.ans_labsetup.repo_setup
+    #     tasks_from: "epel-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+    # - name: Include python-setup
+    #   include_role:
+    #     name: einwolf.ans_labsetup.repo_setup
+    #     tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+#
+    # RHEL 7
+    - name: Include epel-setup 7
+      include_role:
+        name: einwolf.ans_labsetup.repo_setup
+        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+      when: ansible_distribution_major_version == "7" and (
+              ansible_distribution == "RedHat" or
+              ansible_distribution == "CentOS" )
+    - name: Include python-setup 7
+      include_role:
+        name: einwolf.ans_labsetup.repo_setup
+        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+      when: ansible_distribution_major_version == "7" and (
+              ansible_distribution == "RedHat" or
+              ansible_distribution == "CentOS" )
+    # RHEL 8
+    - name: Include epel-setup 8
+      include_role:
+        name: einwolf.ans_labsetup.repo_setup
+        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+      when: ansible_distribution_major_version == "8" and (
+              ansible_distribution == "RedHat" or
+              ansible_distribution == "CentOS" or
+              ansible_distribution == "AlmaLinux" )
+    - name: Include python-setup 8
+      include_role:
+        name: einwolf.ans_labsetup.repo_setup
+        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+      when: ansible_distribution_major_version == "8" and (
+              ansible_distribution == "RedHat" or
+              ansible_distribution == "CentOS" or
+              ansible_distribution == "AlmaLinux" )
+    # RHEL 9
+    - name: Include epel-setup 9
+      include_role:
+        name: einwolf.ans_labsetup.repo_setup
+        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+      when: ansible_distribution_major_version == "9" and (
+              ansible_distribution == "RedHat" or
+              ansible_distribution == "CentOS" or
+              ansible_distribution == "AlmaLinux" )
+    - name: Include python-setup 9
+      include_role:
+        name: einwolf.ans_labsetup.repo_setup
+        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+      when: ansible_distribution_major_version == "9" and (
+              ansible_distribution == "RedHat" or
+              ansible_distribution == "CentOS" or
+              ansible_distribution == "AlmaLinux" )
+    - name: Create inital_setup_ran_at
+      shell: "date -R > /etc/initial_setup_ran_at"

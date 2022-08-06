@@ -1,0 +1,119 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    config.vm.provider :libvirt do |libvirt|
+        libvirt.qemu_use_session = false
+        libvirt.storage_pool_name = "machines"
+    end
+
+    nodes = [
+        { hostname: "slurm-c1-head1", box: "centos/7" },
+        { hostname: "slurm-c1-node1", box: "centos/7" },
+        { hostname: "slurm-c1-node2", box: "centos/7" },
+        { hostname: "slurm-c1-node3", box: "centos/7" }
+    ]
+
+    vm_hostname = "#{`hostname`}".gsub(/[^0-9a-z\-]/i,"")
+    vm_username = "#{ENV['USER']}".gsub(/[^0-9a-z]/i,"")
+
+    nodes.each do |node|
+        config.vm.define node[:hostname] do |config|
+            # Box name
+            #
+            # config.vm.hostname = "V-" + vm_hostname + "-" + vm_username + "-" + node[:hostname]
+            config.vm.hostname = node[:hostname]
+            config.vm.box = node[:box]
+
+            # Domain Specific Options
+            #
+            # See README for more info.
+            #
+            config.vm.provider :libvirt do |domain|
+                domain.memory = 2048
+                domain.cpus = 2
+                domain.graphics_type = "spice"
+                domain.video_type = "qxl"
+            end
+
+            config.ssh.dsa_authentication = "false"
+
+            # Shared directory
+            # Vagrant defines /vagrant as rsync by default
+            config.vm.synced_folder('.', '/vagrant', type: 'sshfs')
+
+            # Network interfaces for VM
+            # The first network is always a NAT with dhcp network called vagrant-libvirt.
+
+            # ip overrides dhcp
+            # config.vm.network :private_network, :type => "dhcp", :ip => "10.20.30.40"
+            # config.vm.network :private_network, :ip => "10.20.30.40"
+
+            # This connects to a libvirt bridge network. (Which must be setup in advance.)
+            # config.vm.network :public_network,
+            #     :dev => "vibr0", :mode => "bridge", :type => "bridge"
+
+            # Wireless lan direct connect
+            # config.vm.network :private_network,
+            #     :bridge => 'wlp2s0', :dev => 'wlp2s0', :ip => '10.20.30.40'
+            # config.vm.network :public_network,
+            #     :bridge => 'wlp2s0', :dev => 'wlp2s0', :ip => '10.20.30.41'
+
+            # config.vm.network :private_network, :type => "dhcp"
+
+            # hostmanager config 
+            config.hostmanager.enabled = false
+            config.hostmanager.manage_host = false
+            config.hostmanager.manage_guest = true
+            # config.hostmanager.ignore_private_ip = false
+            config.hostmanager.include_offline = true
+
+            config.vm.provision :hosts, :sync_hosts => true
+
+            # Inline script provision for last time vagrant provision ran
+            $script1 = <<-SCRIPT
+            echo "Vagrant provisioned at $(date -R)"
+            date > /etc/vagrant_provisioned_at
+            SCRIPT
+
+            config.vm.provision "shell", inline: $script1
+
+            # Run Ansible from the Vagrant host to provision
+            config.vm.provision "ansible" do |ansible|
+                # ansible.limit = "all"
+                ansible.verbose = "v"
+                # ansible.raw_arguments = ["-v"]
+                ansible.config_file = "ansible/ansible.cfg"
+                ansible.playbook = "ansible/initial-setup.yaml"
+            end
+
+            config.vm.provision "ansible" do |ansible|
+                # ansible.limit = "all"
+                ansible.verbose = "v"
+                # ansible.raw_arguments = ["-v"]
+                ansible.config_file = "ansible/ansible.cfg"
+                ansible.playbook = "ansible/slurm-setup-rhel7.yaml"
+            end
+
+            if config.vm.hostname .include? "head"
+                config.vm.provision "ansible" do |ansible|
+                    # ansible.limit = "all"
+                    ansible.verbose = "v"
+                    # ansible.raw_arguments = ["-v"]
+                    ansible.config_file = "ansible/ansible.cfg"
+                    ansible.playbook = "ansible/slurm-head.yaml"
+                end
+            end
+
+            if config.vm.hostname .include? "node"
+                config.vm.provision "ansible" do |ansible|
+                    # ansible.limit = "all"
+                    ansible.verbose = "v"
+                    # ansible.raw_arguments = ["-v"]
+                    ansible.config_file = "ansible/ansible.cfg"
+                    ansible.playbook = "ansible/slurm-node.yaml"
+                end
+            end
+        end
+    end
+end
