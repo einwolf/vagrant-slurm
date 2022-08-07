@@ -48,53 +48,49 @@
     #     tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
 #
     # RHEL 7
-    - name: Include epel-setup 7
-      include_role:
-        name: einwolf.ans_labsetup.repo_setup
-        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
-      when: ansible_distribution_major_version == "7" and (
-              ansible_distribution == "RedHat" or
-              ansible_distribution == "CentOS" )
-    - name: Include python-setup 7
-      include_role:
-        name: einwolf.ans_labsetup.repo_setup
-        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+    - name: Initial setup RHEL 7
+      block:
+        - name: Include epel-setup 7
+          include_role:
+            name: einwolf.ans_labsetup.repo_setup
+            tasks_from: "epel-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+        - name: Include python-setup 7
+          include_role:
+            name: einwolf.ans_labsetup.repo_setup
+            tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
       when: ansible_distribution_major_version == "7" and (
               ansible_distribution == "RedHat" or
               ansible_distribution == "CentOS" )
     # RHEL 8
-    - name: Include epel-setup 8
-      include_role:
-        name: einwolf.ans_labsetup.repo_setup
-        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
-      when: ansible_distribution_major_version == "8" and (
-              ansible_distribution == "RedHat" or
-              ansible_distribution == "CentOS" or
-              ansible_distribution == "AlmaLinux" )
-    - name: Include python-setup 8
-      include_role:
-        name: einwolf.ans_labsetup.repo_setup
-        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+    - name: Initial setup RHEL 8
+      block:
+        - name: Include epel-setup 8
+          include_role:
+            name: einwolf.ans_labsetup.repo_setup
+            tasks_from: "epel-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+        - name: Include python-setup 8
+          include_role:
+            name: einwolf.ans_labsetup.repo_setup
+            tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
       when: ansible_distribution_major_version == "8" and (
               ansible_distribution == "RedHat" or
               ansible_distribution == "CentOS" or
               ansible_distribution == "AlmaLinux" )
     # RHEL 9
-    - name: Include epel-setup 9
-      include_role:
-        name: einwolf.ans_labsetup.repo_setup
-        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+    - name: Initial setup RHEL 9
+      block:
+      - name: Include epel-setup 9
+        include_role:
+          name: einwolf.ans_labsetup.repo_setup
+          tasks_from: "epel-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+      - name: Include python-setup 9
+        include_role:
+          name: einwolf.ans_labsetup.repo_setup
+          tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
       when: ansible_distribution_major_version == "9" and (
               ansible_distribution == "RedHat" or
               ansible_distribution == "CentOS" or
               ansible_distribution == "AlmaLinux" )
-    - name: Include python-setup 9
-      include_role:
-        name: einwolf.ans_labsetup.repo_setup
-        tasks_from: "python-setup-{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
-      when: ansible_distribution_major_version == "9" and (
-              ansible_distribution == "RedHat" or
-              ansible_distribution == "CentOS" or
-              ansible_distribution == "AlmaLinux" )
+    #
     - name: Create inital_setup_ran_at
       shell: "date -R > /etc/initial_setup_ran_at"

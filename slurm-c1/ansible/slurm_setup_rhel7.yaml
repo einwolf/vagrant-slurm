@@ -3,16 +3,30 @@
   gather_facts: yes
   become: true
   tasks:
+    - name: Include slurm_c1_vars
+      include_vars: slurm_c1_vars.yaml
     - name: Provision slurm
       debug:
         msg: "SLURM ALL"
+    - name: Check if slurm_setup ran
+      stat:
+        path: /etc/slurm_setup_ran_at
+      register: slurm_setup_ran_at_stat
+    - block:
+        - name: Don't run slurm_setup if already run
+          debug:
+            msg: slurm_setup already ran
+        - meta: end_host
+      when: slurm_setup_ran_at_stat.stat.exists
     - name: Install packages
       yum:
         state: latest
         name:
           - chrony
+          - nano
           - mariadb
-          - mariadb-server
+          - xorg-x11-utils
+          - xorg-x11-xauth
           - slurm
           - slurm-doc
           - slurm-slurmctld
@@ -33,8 +47,10 @@
         - slurm-c1-node1
         - slurm-c1-node2
         - slurm-c1-node3
+        - slurm-c1-db1
     - name: Sort known_hosts
       shell: sort ~/.ssh/known_hosts | uniq > ~/.ssh/known_hosts.unique
-    - name: Replace known_hosts
+    - name: Replace known_hosts with sorted
       shell: mv -vf ~/.ssh/known_hosts.unique ~/.ssh/known_hosts
-      
+    - name: Create slurm_setup_ran_at
+      shell: "date -R > /etc/slurm_setup_ran_at"

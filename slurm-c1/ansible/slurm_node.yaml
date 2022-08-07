@@ -1,0 +1,46 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: true
+  tasks:
+    - name: Include slurm_c1_vars
+      include_vars: slurm_c1_vars.yaml
+    - name: Provision slurm node
+      debug:
+        msg: "SLURM NODE"
+    - name: Check for munge key
+      stat:
+        path: /etc/munge/munge.key
+      register: munge_key_stat
+    - name: Copy munge key
+      copy:
+        src: setup/slurm-c1-head1/etc/munge/munge.key
+        dest: /etc/munge/munge.key
+        owner: munge
+        group: munge
+        mode: u=r,go=
+      when: not munge_key_stat.stat.exists
+    - name: Start munge
+      service:
+        name: munge
+        enabled: yes
+        state: restarted
+    - name: Copy slurm.conf
+      template:
+        src: etc/slurm/slurm.conf
+        dest: /etc/slurm/slurm.conf
+        owner: root
+        group: root
+        mode: u=rw,go=r
+    - name: Copy slurmdbd.conf
+      template:
+        src: etc/slurm/slurmdbd.conf
+        dest: /etc/slurm/slurmdbd.conf
+        owner: root
+        group: root
+        mode: u=rw,go=
+    - name: Start slurmd
+      service:
+        name: slurmd
+        enabled: yes
+        state: restarted
